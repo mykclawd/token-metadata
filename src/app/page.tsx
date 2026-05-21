@@ -34,12 +34,7 @@ export default function Home() {
           href="https://github.com/mykclawd/token-metadata"
           target="_blank"
           rel="noopener noreferrer"
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-            textDecoration: "none", transition: "opacity 0.15s",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.opacity = "0.7")}
-          onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+          className="footer-link"
         >
           <span style={{ color: "var(--text-3)", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}>
             built by
