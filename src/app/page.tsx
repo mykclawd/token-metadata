@@ -6,7 +6,7 @@ export default function Home() {
     <main className="relative z-10 min-h-screen px-4 py-14 sm:py-20 flex flex-col">
       <div className="max-w-2xl mx-auto w-full flex-1">
         <header className="mb-12 animate-fade-up flex flex-col-reverse sm:flex-row items-center gap-8">
-          <div className="w-full sm:flex-none">
+          <div className="w-full sm:w-auto sm:flex-none">
             <p className="section-label mb-3">ERC-20 · Multi-chain</p>
             <h1
               style={{
