@@ -1,5 +1,5 @@
 import { type Address } from "viem";
-import { publicClient } from "./rpc";
+import { makePublicClient } from "./rpc";
 
 const ERC20_ABI = [
   { name: "name", type: "function", inputs: [], outputs: [{ type: "string" }], stateMutability: "view" },
@@ -15,18 +15,20 @@ export interface ERC20Metadata {
   totalSupply: string;
 }
 
-export async function hasBytecode(address: Address): Promise<boolean> {
-  const code = await publicClient.getBytecode({ address });
+export async function hasBytecode(address: Address, chainId: number): Promise<boolean> {
+  const client = makePublicClient(chainId);
+  const code = await client.getBytecode({ address });
   return !!code && code !== "0x" && code.length > 2;
 }
 
-export async function isERC20Contract(address: Address): Promise<boolean> {
+export async function isERC20Contract(address: Address, chainId: number): Promise<boolean> {
+  const client = makePublicClient(chainId);
   try {
     const [name, symbol, decimals, totalSupply] = await Promise.all([
-      publicClient.readContract({ address, abi: ERC20_ABI, functionName: "name" }),
-      publicClient.readContract({ address, abi: ERC20_ABI, functionName: "symbol" }),
-      publicClient.readContract({ address, abi: ERC20_ABI, functionName: "decimals" }),
-      publicClient.readContract({ address, abi: ERC20_ABI, functionName: "totalSupply" }),
+      client.readContract({ address, abi: ERC20_ABI, functionName: "name" }),
+      client.readContract({ address, abi: ERC20_ABI, functionName: "symbol" }),
+      client.readContract({ address, abi: ERC20_ABI, functionName: "decimals" }),
+      client.readContract({ address, abi: ERC20_ABI, functionName: "totalSupply" }),
     ]);
     return !!(name && symbol && decimals !== undefined && totalSupply !== undefined);
   } catch {
@@ -34,12 +36,13 @@ export async function isERC20Contract(address: Address): Promise<boolean> {
   }
 }
 
-export async function getERC20Metadata(address: Address): Promise<ERC20Metadata> {
+export async function getERC20Metadata(address: Address, chainId: number): Promise<ERC20Metadata> {
+  const client = makePublicClient(chainId);
   const [name, symbol, decimals, totalSupply] = await Promise.all([
-    publicClient.readContract({ address, abi: ERC20_ABI, functionName: "name" }),
-    publicClient.readContract({ address, abi: ERC20_ABI, functionName: "symbol" }),
-    publicClient.readContract({ address, abi: ERC20_ABI, functionName: "decimals" }),
-    publicClient.readContract({ address, abi: ERC20_ABI, functionName: "totalSupply" }),
+    client.readContract({ address, abi: ERC20_ABI, functionName: "name" }),
+    client.readContract({ address, abi: ERC20_ABI, functionName: "symbol" }),
+    client.readContract({ address, abi: ERC20_ABI, functionName: "decimals" }),
+    client.readContract({ address, abi: ERC20_ABI, functionName: "totalSupply" }),
   ]);
 
   const divisor = BigInt(10) ** BigInt(decimals);

@@ -1,6 +1,6 @@
 import { type Address, type Abi } from "viem";
 import { fetchJsonOrText, resolveIpfsUri, safeJsonParse } from "./utils";
-import { publicClient } from "./rpc";
+import { makePublicClient } from "./rpc";
 
 type ProbeStatus = "success" | "reverted" | "unavailable" | "error";
 
@@ -49,15 +49,14 @@ const PROBE_FUNCTIONS: { name: string; abi: Abi }[] = [
 
 async function callWithFallback(
   address: Address,
-  fn: { name: string; abi: Abi }
+  fn: { name: string; abi: Abi },
+  chainId: number
 ): Promise<ProbeResult> {
+  const client = makePublicClient(chainId);
   try {
-    let args: unknown[] = [];
-    if (["tokenURI", "uri"].includes(fn.name)) {
-      args = [0n];
-    }
+    const args: unknown[] = ["tokenURI", "uri"].includes(fn.name) ? [0n] : [];
 
-    const raw = await publicClient.readContract({
+    const raw = await client.readContract({
       address,
       abi: fn.abi,
       functionName: fn.name,
@@ -102,9 +101,9 @@ export interface DiscoveredMetadata {
   rawResponses: Record<string, string>;
 }
 
-export async function probeContract(address: Address): Promise<DiscoveredMetadata> {
+export async function probeContract(address: Address, chainId: number): Promise<DiscoveredMetadata> {
   const results = await Promise.all(
-    PROBE_FUNCTIONS.map((fn) => callWithFallback(address, fn))
+    PROBE_FUNCTIONS.map((fn) => callWithFallback(address, fn, chainId))
   );
 
   const rawResponses: Record<string, string> = {};

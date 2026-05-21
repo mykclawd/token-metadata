@@ -7,6 +7,21 @@ import { ProbeResults } from "./ProbeResults";
 import { SocialLinks } from "./SocialLinks";
 import { ImageGallery } from "./ImageGallery";
 
+const CHAINS = [
+  { id: 8453, label: "Base" },
+  { id: 1, label: "Ethereum" },
+  { id: 42161, label: "Arbitrum" },
+  { id: 10, label: "Optimism" },
+  { id: 137, label: "Polygon" },
+  { id: 56, label: "BNB Chain" },
+  { id: 43114, label: "Avalanche" },
+  { id: 7777777, label: "Zora" },
+  { id: 59144, label: "Linea" },
+  { id: 534352, label: "Scroll" },
+];
+
+const DEFAULT_CHAIN_ID = 8453;
+
 interface ERC20Metadata {
   name: string;
   symbol: string;
@@ -23,6 +38,8 @@ interface ProbeResult {
 
 interface InspectResult {
   address: string;
+  chainId: number;
+  chainName: string;
   erc20: ERC20Metadata;
   discovered: {
     metadata: Record<string, unknown> | null;
@@ -60,6 +77,7 @@ function MetaRow({ label, value }: { label: string; value: string | number }) {
 
 export function TokenInspector() {
   const [address, setAddress] = useState("");
+  const [chainId, setChainId] = useState(DEFAULT_CHAIN_ID);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<InspectResult | null>(null);
@@ -78,7 +96,7 @@ export function TokenInspector() {
     setResult(null);
 
     try {
-      const res = await fetch(`/api/inspect?address=${encodeURIComponent(trimmed)}`);
+      const res = await fetch(`/api/inspect?address=${encodeURIComponent(trimmed)}&chainId=${chainId}`);
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Inspection failed.");
@@ -90,7 +108,7 @@ export function TokenInspector() {
     } finally {
       setLoading(false);
     }
-  }, [address]);
+  }, [address, chainId]);
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") inspect();
@@ -98,7 +116,7 @@ export function TokenInspector() {
 
   return (
     <div className="max-w-3xl mx-auto w-full space-y-6">
-      {/* Input */}
+      {/* Input row */}
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="text"
@@ -111,6 +129,16 @@ export function TokenInspector() {
           spellCheck={false}
           autoComplete="off"
         />
+        <select
+          value={chainId}
+          onChange={(e) => { setChainId(Number(e.target.value)); setResult(null); setError(null); }}
+          disabled={loading}
+          className="px-3 py-3 rounded-xl bg-gray-900 border border-gray-700 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm flex-shrink-0 cursor-pointer"
+        >
+          {CHAINS.map((c) => (
+            <option key={c.id} value={c.id}>{c.label}</option>
+          ))}
+        </select>
         <button
           onClick={inspect}
           disabled={loading || !address.trim()}
@@ -138,9 +166,10 @@ export function TokenInspector() {
       {/* Results */}
       {result && (
         <div className="space-y-4">
-          {/* Address badge */}
-          <div className="flex items-center gap-2 text-sm">
+          {/* Address + chain badge */}
+          <div className="flex items-center gap-2 text-sm flex-wrap">
             <span className="px-2 py-0.5 rounded bg-green-900/40 border border-green-700 text-green-400 text-xs font-medium">ERC-20</span>
+            <span className="px-2 py-0.5 rounded bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-xs font-medium">{result.chainName}</span>
             <a
               href={`https://etherscan.io/token/${result.address}`}
               target="_blank"
