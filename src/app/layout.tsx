@@ -17,6 +17,17 @@ const firaCode = Fira_Code({
 export const metadata: Metadata = {
   title: "Token Inspector",
   description: "Inspect ERC-20 token metadata including on-chain standard fields, IPFS metadata, social links, and raw contract probes.",
+  icons: {
+    icon: [
+      { url: "/favicons/favicon.ico" },
+      { url: "/favicons/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicons/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/favicons/apple-touch-icon.png" }],
+    other: [
+      { rel: "manifest", url: "/favicons/site.webmanifest" },
+    ],
+  },
 };
 
 export default function RootLayout({
