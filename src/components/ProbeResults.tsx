@@ -11,30 +11,56 @@ interface ProbeResultsProps {
   results: ProbeResult[];
 }
 
-const statusConfig = {
-  success: { label: "Success", bg: "bg-green-900/40", border: "border-green-700", text: "text-green-400", dot: "bg-green-500" },
-  reverted: { label: "Reverted", bg: "bg-yellow-900/30", border: "border-yellow-700", text: "text-yellow-400", dot: "bg-yellow-500" },
-  unavailable: { label: "N/A", bg: "bg-gray-800/40", border: "border-gray-700", text: "text-gray-500", dot: "bg-gray-600" },
-  error: { label: "Error", bg: "bg-red-900/30", border: "border-red-700", text: "text-red-400", dot: "bg-red-500" },
+const STATUS = {
+  success:     { label: "OK",  color: "var(--accent)",  bg: "rgba(0,220,180,0.07)",  dot: "var(--accent)" },
+  reverted:    { label: "REV", color: "var(--warn)",     bg: "rgba(245,166,35,0.06)", dot: "var(--warn)" },
+  unavailable: { label: "N/A", color: "var(--text-3)",   bg: "transparent",           dot: "var(--text-3)" },
+  error:       { label: "ERR", color: "var(--danger)",   bg: "rgba(255,77,106,0.06)", dot: "var(--danger)" },
 };
 
 export function ProbeResults({ results }: ProbeResultsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
       {results.map((r) => {
-        const cfg = statusConfig[r.status];
+        const s = STATUS[r.status];
         return (
-          <div key={r.fn} className={`rounded-lg border p-3 ${cfg.bg} ${cfg.border}`}>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
-              <code className="text-sm font-mono text-white">{r.fn}()</code>
-              <span className={`ml-auto text-xs font-medium ${cfg.text}`}>{cfg.label}</span>
-            </div>
+          <div
+            key={r.fn}
+            style={{
+              display: "flex", alignItems: "center", gap: "0.75rem",
+              padding: "0.5rem 0.75rem",
+              background: s.bg,
+              borderRadius: "3px",
+              border: `1px solid ${r.status === "unavailable" ? "transparent" : `${s.color}25`}`,
+            }}
+          >
+            <span style={{
+              width: "6px", height: "6px", borderRadius: "50%", flexShrink: 0,
+              background: s.dot,
+              boxShadow: r.status === "success" ? `0 0 6px ${s.dot}` : "none",
+            }} />
+            <code style={{
+              fontFamily: "var(--font-mono)", fontSize: "0.8rem",
+              color: r.status === "unavailable" ? "var(--text-3)" : "var(--text-1)",
+              flex: 1,
+            }}>
+              {r.fn}()
+            </code>
+            <span style={{
+              fontFamily: "var(--font-display)", fontSize: "0.6rem", fontWeight: 700,
+              letterSpacing: "0.12em",
+              color: s.color,
+            }}>
+              {s.label}
+            </span>
             {r.status === "success" && r.raw && (
-              <p className="text-xs text-gray-400 truncate font-mono mt-1">{r.raw.slice(0, 80)}{r.raw.length > 80 ? "…" : ""}</p>
-            )}
-            {r.error && r.status !== "unavailable" && (
-              <p className="text-xs text-gray-500 mt-1 truncate">{r.error.slice(0, 100)}</p>
+              <span style={{
+                fontFamily: "var(--font-mono)", fontSize: "0.7rem",
+                color: "var(--text-3)",
+                maxWidth: "12rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>
+                {r.raw.slice(0, 60)}{r.raw.length > 60 ? "…" : ""}
+              </span>
             )}
           </div>
         );

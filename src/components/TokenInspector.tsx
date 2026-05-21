@@ -8,76 +8,104 @@ import { SocialLinks } from "./SocialLinks";
 import { ImageGallery } from "./ImageGallery";
 
 const CHAINS = [
-  { id: 8453, label: "Base" },
-  { id: 1, label: "Ethereum" },
-  { id: 42161, label: "Arbitrum" },
-  { id: 10, label: "Optimism" },
-  { id: 137, label: "Polygon" },
-  { id: 56, label: "BNB Chain" },
-  { id: 43114, label: "Avalanche" },
+  { id: 8453,    label: "Base" },
+  { id: 1,       label: "Ethereum" },
+  { id: 42161,   label: "Arbitrum" },
+  { id: 10,      label: "Optimism" },
+  { id: 137,     label: "Polygon" },
+  { id: 56,      label: "BNB Chain" },
+  { id: 43114,   label: "Avalanche" },
   { id: 7777777, label: "Zora" },
-  { id: 59144, label: "Linea" },
-  { id: 534352, label: "Scroll" },
+  { id: 59144,   label: "Linea" },
+  { id: 534352,  label: "Scroll" },
 ];
 
-const DEFAULT_CHAIN_ID = 8453;
-
-interface ERC20Metadata {
-  name: string;
-  symbol: string;
-  decimals: number;
-  totalSupply: string;
-}
-
-interface ProbeResult {
-  fn: string;
-  status: "success" | "reverted" | "unavailable" | "error";
-  raw?: string;
-  error?: string;
-}
-
+interface ERC20Metadata { name: string; symbol: string; decimals: number; totalSupply: string; }
+interface ProbeResult { fn: string; status: "success"|"reverted"|"unavailable"|"error"; raw?: string; error?: string; }
 interface InspectResult {
-  address: string;
-  chainId: number;
-  chainName: string;
+  address: string; chainId: number; chainName: string;
   erc20: ERC20Metadata;
-  discovered: {
-    metadata: Record<string, unknown> | null;
-    imageUrls: string[];
-    socialLinks: Record<string, string>;
-  };
+  discovered: { metadata: Record<string, unknown>|null; imageUrls: string[]; socialLinks: Record<string, string>; };
   probeResults: ProbeResult[];
   rawResponses: Record<string, string>;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title, index, children,
+}: { title: string; index: number; children: React.ReactNode }) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="border border-gray-800 rounded-xl overflow-hidden">
+    <div
+      className="card section-reveal overflow-hidden"
+      style={{ animationDelay: `${index * 80}ms` }}
+    >
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-5 py-3 bg-gray-900/60 hover:bg-gray-800/60 transition-colors text-left"
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0.875rem 1.25rem",
+          background: "transparent",
+          borderBottom: open ? "1px solid var(--border)" : "none",
+          cursor: "pointer",
+          gap: "0.5rem",
+        }}
       >
-        <span className="font-semibold text-gray-100">{title}</span>
-        <span className="text-gray-500 text-lg">{open ? "−" : "+"}</span>
+        <span className="section-label">{title}</span>
+        <span style={{ color: "var(--text-3)", fontSize: "0.85rem", fontFamily: "var(--font-mono)", lineHeight: 1 }}>
+          {open ? "−" : "+"}
+        </span>
       </button>
-      {open && <div className="p-5 bg-gray-950/40">{children}</div>}
+      {open && (
+        <div style={{ padding: "1.25rem" }}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
 
-function MetaRow({ label, value }: { label: string; value: string | number }) {
+function DataRow({ label, value, mono = true }: { label: string; value: string | number; mono?: boolean }) {
   return (
-    <div className="flex items-start gap-3 py-2 border-b border-gray-800 last:border-0">
-      <span className="text-gray-500 text-sm w-28 flex-shrink-0">{label}</span>
-      <span className="text-gray-100 text-sm font-mono break-all">{String(value)}</span>
+    <div style={{
+      display: "flex", gap: "1rem", padding: "0.5rem 0",
+      borderBottom: "1px solid var(--border)",
+      alignItems: "baseline",
+    }}>
+      <span style={{
+        fontFamily: "var(--font-display)", fontSize: "0.65rem", fontWeight: 600,
+        letterSpacing: "0.14em", textTransform: "uppercase",
+        color: "var(--text-2)", flexShrink: 0, width: "7rem",
+      }}>
+        {label}
+      </span>
+      <span style={{
+        fontFamily: mono ? "var(--font-mono)" : "var(--font-display)",
+        fontSize: mono ? "0.85rem" : "0.9rem",
+        color: "var(--text-1)", wordBreak: "break-all",
+      }}>
+        {String(value)}
+      </span>
     </div>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="rgba(0,220,180,0.25)" strokeWidth="3" />
+        <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round">
+          <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite" />
+        </path>
+      </svg>
+      Scanning…
+    </span>
   );
 }
 
 export function TokenInspector() {
   const [address, setAddress] = useState("");
-  const [chainId, setChainId] = useState(DEFAULT_CHAIN_ID);
+  const [chainId, setChainId] = useState(8453);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<InspectResult | null>(null);
@@ -85,24 +113,14 @@ export function TokenInspector() {
   const inspect = useCallback(async () => {
     const trimmed = address.trim();
     if (!trimmed) return;
+    if (!isValidEvmAddress(trimmed)) { setError("Enter a valid EVM address."); return; }
 
-    if (!isValidEvmAddress(trimmed)) {
-      setError("Enter a valid EVM address.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
+    setLoading(true); setError(null); setResult(null);
     try {
       const res = await fetch(`/api/inspect?address=${encodeURIComponent(trimmed)}&chainId=${chainId}`);
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Inspection failed.");
-      } else {
-        setResult(data as InspectResult);
-      }
+      if (!res.ok) setError(data.error ?? "Inspection failed.");
+      else setResult(data as InspectResult);
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -110,134 +128,208 @@ export function TokenInspector() {
     }
   }, [address, chainId]);
 
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") inspect();
-  };
+  const handleKey = (e: React.KeyboardEvent) => { if (e.key === "Enter") inspect(); };
+
+  const explorerBase = chainId === 8453 ? "https://basescan.org"
+    : chainId === 1 ? "https://etherscan.io"
+    : chainId === 42161 ? "https://arbiscan.io"
+    : chainId === 10 ? "https://optimistic.etherscan.io"
+    : chainId === 137 ? "https://polygonscan.com"
+    : chainId === 56 ? "https://bscscan.com"
+    : "https://etherscan.io";
 
   return (
-    <div className="max-w-3xl mx-auto w-full space-y-6">
-      {/* Input row */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="text"
-          value={address}
-          onChange={(e) => { setAddress(e.target.value); setError(null); }}
-          onKeyDown={handleKey}
-          placeholder="0x... ERC-20 contract address"
-          className="flex-1 px-4 py-3 rounded-xl bg-gray-900 border border-gray-700 text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono text-sm"
-          disabled={loading}
-          spellCheck={false}
-          autoComplete="off"
-        />
-        <select
-          value={chainId}
-          onChange={(e) => { setChainId(Number(e.target.value)); setResult(null); setError(null); }}
-          disabled={loading}
-          className="px-3 py-3 rounded-xl bg-gray-900 border border-gray-700 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm flex-shrink-0 cursor-pointer"
-        >
-          {CHAINS.map((c) => (
-            <option key={c.id} value={c.id}>{c.label}</option>
-          ))}
-        </select>
-        <button
-          onClick={inspect}
-          disabled={loading || !address.trim()}
-          className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-800 disabled:text-gray-600 text-white font-semibold transition-colors flex-shrink-0"
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-              Inspecting…
-            </span>
-          ) : "Inspect"}
-        </button>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+
+      {/* ── Search row ── */}
+      <div
+        className="scanner card"
+        style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}
+      >
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <input
+            className="field"
+            style={{ flex: 1, minWidth: "0" }}
+            type="text"
+            value={address}
+            onChange={(e) => { setAddress(e.target.value); setError(null); }}
+            onKeyDown={handleKey}
+            placeholder="0x contract address"
+            disabled={loading}
+            spellCheck={false}
+            autoComplete="off"
+          />
+          <select
+            className="field"
+            style={{ flexShrink: 0, cursor: "pointer" }}
+            value={chainId}
+            onChange={(e) => { setChainId(Number(e.target.value)); setResult(null); setError(null); }}
+            disabled={loading}
+          >
+            {CHAINS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+          </select>
+          <button
+            className="btn-primary"
+            onClick={inspect}
+            disabled={loading || !address.trim()}
+          >
+            {loading ? <LoadingSpinner /> : "Inspect"}
+          </button>
+        </div>
+
+        {error && (
+          <div style={{
+            fontFamily: "var(--font-mono)", fontSize: "0.8rem",
+            color: "var(--danger)", padding: "0.5rem 0.75rem",
+            background: "rgba(255,77,106,0.08)", border: "1px solid rgba(255,77,106,0.25)",
+            borderRadius: "3px",
+          }}>
+            ⚠ {error}
+          </div>
+        )}
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="px-4 py-3 rounded-xl bg-red-900/30 border border-red-700 text-red-300 text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Results */}
+      {/* ── Results ── */}
       {result && (
-        <div className="space-y-4">
-          {/* Address + chain badge */}
-          <div className="flex items-center gap-2 text-sm flex-wrap">
-            <span className="px-2 py-0.5 rounded bg-green-900/40 border border-green-700 text-green-400 text-xs font-medium">ERC-20</span>
-            <span className="px-2 py-0.5 rounded bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-xs font-medium">{result.chainName}</span>
+        <>
+          {/* Address strip */}
+          <div
+            className="section-reveal"
+            style={{
+              display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap",
+              padding: "0.6rem 0",
+            }}
+          >
+            <span style={{
+              fontFamily: "var(--font-display)", fontSize: "0.6rem", fontWeight: 700,
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              color: "var(--accent)", background: "var(--accent-dim)",
+              border: "1px solid rgba(0,220,180,0.25)",
+              padding: "0.2rem 0.5rem", borderRadius: "3px",
+            }}>ERC-20</span>
+            <span style={{
+              fontFamily: "var(--font-display)", fontSize: "0.6rem", fontWeight: 700,
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              color: "var(--text-2)", background: "rgba(90,132,158,0.08)",
+              border: "1px solid rgba(90,132,158,0.2)",
+              padding: "0.2rem 0.5rem", borderRadius: "3px",
+            }}>{result.chainName}</span>
             <a
-              href={`https://etherscan.io/token/${result.address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-cyan-400 font-mono text-xs break-all transition-colors"
+              href={`${explorerBase}/token/${result.address}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{
+                fontFamily: "var(--font-mono)", fontSize: "0.72rem",
+                color: "var(--text-2)", transition: "color 0.15s", wordBreak: "break-all",
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.color = "var(--accent)")}
+              onMouseOut={(e) => (e.currentTarget.style.color = "var(--text-2)")}
             >
               {result.address}
             </a>
           </div>
 
-          {/* Images */}
-          {result.discovered.imageUrls.length > 0 && (
-            <ImageGallery urls={result.discovered.imageUrls} />
-          )}
+          {/* Token identity hero */}
+          <div
+            className="card section-reveal"
+            style={{
+              padding: "1.5rem 1.25rem",
+              display: "flex", alignItems: "center", gap: "1.5rem",
+              animationDelay: "40ms",
+            }}
+          >
+            {result.discovered.imageUrls.length > 0 && (
+              <ImageGallery urls={result.discovered.imageUrls} compact />
+            )}
+            <div>
+              <div style={{
+                fontFamily: "var(--font-display)", fontWeight: 800,
+                fontSize: "clamp(1.4rem, 4vw, 2rem)", letterSpacing: "-0.02em",
+                color: "var(--text-1)", lineHeight: 1.1,
+              }}>
+                {result.erc20.name}
+              </div>
+              <div style={{
+                fontFamily: "var(--font-mono)", fontSize: "0.85rem",
+                color: "var(--accent)", marginTop: "0.2rem",
+              }}>
+                {result.erc20.symbol}
+              </div>
+            </div>
+          </div>
 
           {/* 1. Standard ERC-20 */}
-          <Section title="1. Standard ERC-20 Metadata">
+          <Section title="01 · ERC-20 Standard" index={2}>
             <div>
-              <MetaRow label="Name" value={result.erc20.name} />
-              <MetaRow label="Symbol" value={result.erc20.symbol} />
-              <MetaRow label="Decimals" value={result.erc20.decimals} />
-              <MetaRow label="Total Supply" value={`${result.erc20.totalSupply} ${result.erc20.symbol}`} />
+              <DataRow label="Name"         value={result.erc20.name} />
+              <DataRow label="Symbol"       value={result.erc20.symbol} />
+              <DataRow label="Decimals"     value={result.erc20.decimals} />
+              <DataRow label="Total Supply" value={`${result.erc20.totalSupply} ${result.erc20.symbol}`} />
             </div>
           </Section>
 
-          {/* 2. Discovered Metadata */}
-          <Section title="2. Discovered Metadata">
-            {result.discovered.metadata ? (
-              <div className="space-y-4">
+          {/* 2. Discovered */}
+          <Section title="02 · Discovered Metadata" index={3}>
+            {result.discovered.metadata || Object.keys(result.discovered.socialLinks).length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                 {Object.keys(result.discovered.socialLinks).length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Social Links</p>
+                    <p className="section-label" style={{ marginBottom: "0.6rem" }}>Links</p>
                     <SocialLinks links={result.discovered.socialLinks} />
                   </div>
                 )}
-                <div>
-                  <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Metadata</p>
-                  <div className="bg-gray-900 rounded-lg p-4 overflow-auto text-sm font-mono leading-relaxed max-h-96">
-                    <JsonViewer data={result.discovered.metadata} />
+                {result.discovered.metadata && (
+                  <div>
+                    <p className="section-label" style={{ marginBottom: "0.6rem" }}>Metadata</p>
+                    <div style={{
+                      background: "rgba(4,12,24,0.7)", borderRadius: "4px", padding: "1rem",
+                      fontFamily: "var(--font-mono)", fontSize: "0.8rem",
+                      lineHeight: 1.7, overflowX: "auto", maxHeight: "24rem", overflowY: "auto",
+                      border: "1px solid var(--border)",
+                    }}>
+                      <JsonViewer data={result.discovered.metadata} />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm italic">No additional metadata discovered.</p>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-3)" }}>
+                No additional metadata discovered.
+              </span>
             )}
           </Section>
 
-          {/* 3. Raw Responses */}
-          <Section title="3. Raw Responses">
+          {/* 3. Raw */}
+          <Section title="03 · Raw Responses" index={4}>
             {Object.keys(result.rawResponses).length > 0 ? (
-              <div className="space-y-3">
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {Object.entries(result.rawResponses).map(([fn, raw]) => (
                   <div key={fn}>
-                    <p className="text-xs text-gray-500 mb-1 font-mono">{fn}</p>
-                    <pre className="bg-gray-900 rounded-lg p-3 text-xs text-gray-300 overflow-auto max-h-48 whitespace-pre-wrap break-all">{raw}</pre>
+                    <p style={{
+                      fontFamily: "var(--font-mono)", fontSize: "0.7rem",
+                      color: "var(--accent)", marginBottom: "0.35rem", letterSpacing: "0.05em",
+                    }}>{fn}</p>
+                    <pre style={{
+                      background: "rgba(4,12,24,0.7)", border: "1px solid var(--border)",
+                      borderRadius: "4px", padding: "0.75rem", fontSize: "0.72rem",
+                      fontFamily: "var(--font-mono)", color: "var(--text-2)",
+                      overflowX: "auto", maxHeight: "12rem", overflowY: "auto",
+                      whiteSpace: "pre-wrap", wordBreak: "break-all",
+                    }}>{raw}</pre>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm italic">No raw responses to display.</p>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-3)" }}>
+                No raw responses to display.
+              </span>
             )}
           </Section>
 
-          {/* 4. Probe Results */}
-          <Section title="4. Probe Results">
+          {/* 4. Probe results */}
+          <Section title="04 · Probe Results" index={5}>
             <ProbeResults results={result.probeResults} />
           </Section>
-        </div>
+        </>
       )}
     </div>
   );
