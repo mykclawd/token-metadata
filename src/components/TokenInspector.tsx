@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { isValidEvmAddress } from "@/lib/utils";
 import { JsonViewer } from "./JsonViewer";
 import { ProbeResults } from "./ProbeResults";
@@ -104,12 +104,28 @@ function LoadingSpinner() {
   );
 }
 
+interface Suggestion {
+  tokenAddress: string;
+  symbol: string;
+  icon: string | null;
+}
+
 export function TokenInspector() {
   const [address, setAddress] = useState("");
   const [chainId, setChainId] = useState(8453);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<InspectResult | null>(null);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/suggestions")
+      .then((r) => r.json())
+      .then((d) => { if (d.suggestions) setSuggestions(d.suggestions); })
+      .catch(() => {})
+      .finally(() => setSuggestionsLoading(false));
+  }, []);
 
   const inspect = useCallback(async () => {
     const trimmed = address.trim();
@@ -147,10 +163,10 @@ export function TokenInspector() {
         className={`${!loading && !result && !error ? "scanner" : ""} card`}
         style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}
       >
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             className="field"
-            style={{ flex: 1, minWidth: "0" }}
+            style={{ flex: "1 1 auto", minWidth: 0 }}
             type="text"
             value={address}
             onChange={(e) => { setAddress(e.target.value); setError(null); }}
@@ -160,22 +176,24 @@ export function TokenInspector() {
             spellCheck={false}
             autoComplete="off"
           />
-          <select
-            className="field"
-            style={{ flexShrink: 0, cursor: "pointer" }}
-            value={chainId}
-            onChange={(e) => { setChainId(Number(e.target.value)); setResult(null); setError(null); }}
-            disabled={loading}
-          >
-            {CHAINS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-          </select>
-          <button
-            className="btn-primary"
-            onClick={inspect}
-            disabled={loading || !address.trim()}
-          >
-            {loading ? <LoadingSpinner /> : "Inspect"}
-          </button>
+          <div className="flex gap-2">
+            <select
+              className="field flex-1 sm:flex-none"
+              style={{ cursor: "pointer" }}
+              value={chainId}
+              onChange={(e) => { setChainId(Number(e.target.value)); setResult(null); setError(null); }}
+              disabled={loading}
+            >
+              {CHAINS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+            <button
+              className="btn-primary flex-shrink-0"
+              onClick={inspect}
+              disabled={loading || !address.trim()}
+            >
+              {loading ? <LoadingSpinner /> : "Inspect"}
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -188,6 +206,73 @@ export function TokenInspector() {
             ⚠ {error}
           </div>
         )}
+
+        {chainId === 8453 && (suggestionsLoading || suggestions.length > 0) && (
+          <div style={{
+            borderTop: "1px solid var(--border)",
+            paddingTop: "0.6rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.4rem",
+          }}>
+            <span style={{
+              fontFamily: "var(--font-display)", fontSize: "0.55rem", fontWeight: 700,
+              letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-3)",
+            }}>
+              Trending on Base
+            </span>
+            <div style={{ display: "flex", flexWrap: "nowrap", gap: "0.4rem", overflow: "hidden" }}>
+              {suggestionsLoading ? (
+                <>
+                  <div className="animate-pulse" style={{ height: "1.75rem", width: "7.5rem", borderRadius: "100px", background: "rgba(0,220,180,0.07)", border: "1px solid rgba(0,220,180,0.1)", flexShrink: 0 }} />
+                  <div className="animate-pulse" style={{ height: "1.75rem", width: "6rem", borderRadius: "100px", background: "rgba(0,220,180,0.07)", border: "1px solid rgba(0,220,180,0.1)", flexShrink: 0 }} />
+                  <div className="hidden sm:block animate-pulse" style={{ height: "1.75rem", width: "8rem", borderRadius: "100px", background: "rgba(0,220,180,0.07)", border: "1px solid rgba(0,220,180,0.1)", flexShrink: 0 }} />
+                </>
+              ) : suggestions.slice(0, 3).map((s, i) => (
+                <button
+                  key={s.tokenAddress}
+                  onClick={() => { setAddress(s.tokenAddress); setError(null); }}
+                  disabled={loading}
+                  className={i === 2 ? "hidden sm:inline-flex" : ""}
+                  style={{
+                    display: i === 2 ? undefined : "inline-flex", alignItems: "center", gap: "0.4rem",
+                    padding: "0.3rem 0.65rem",
+                    background: "rgba(0,220,180,0.05)",
+                    border: "1px solid rgba(0,220,180,0.18)",
+                    borderRadius: "100px",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                    transition: "background 0.15s, border-color 0.15s",
+                    fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--text-2)",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = "rgba(0,220,180,0.1)";
+                    e.currentTarget.style.borderColor = "rgba(0,220,180,0.38)";
+                    e.currentTarget.style.color = "var(--text-1)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = "rgba(0,220,180,0.05)";
+                    e.currentTarget.style.borderColor = "rgba(0,220,180,0.18)";
+                    e.currentTarget.style.color = "var(--text-2)";
+                  }}
+                >
+                  {s.icon && (
+                    <img
+                      src={s.icon} alt=""
+                      width={14} height={14}
+                      style={{ borderRadius: "50%", flexShrink: 0 }}
+                    />
+                  )}
+                  <span style={{ color: "var(--accent)", fontWeight: 600 }}>{s.symbol}</span>
+                  <span style={{ color: "var(--text-3)", fontSize: "0.65rem" }}>
+                    {s.tokenAddress.slice(0, 6)}…{s.tokenAddress.slice(-4)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* ── Results ── */}
