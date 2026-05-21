@@ -1,13 +1,19 @@
 import { isAddress } from "viem";
+import { createThirdwebClient } from "thirdweb";
+import { resolveScheme } from "thirdweb/storage";
 
 export function isValidEvmAddress(address: string): boolean {
   return isAddress(address);
 }
 
+const _thirdwebClient = createThirdwebClient({
+  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID ?? "",
+});
+
 export function resolveIpfsUri(uri: string): string {
   if (!uri) return uri;
-  if (uri.startsWith("ipfs://")) {
-    return `https://ipfs.io/ipfs/${uri.slice(7)}`;
+  if (uri.startsWith("ipfs://") || uri.startsWith("http://") || uri.startsWith("https://")) {
+    return resolveScheme({ client: _thirdwebClient, uri });
   }
   return uri;
 }
