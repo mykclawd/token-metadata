@@ -49,6 +49,10 @@ const PROBE_FUNCTIONS: { name: string; abi: Abi; argVariants?: unknown[][] }[] =
     abi: [{ name: "imageURL", type: "function", inputs: [], outputs: [{ type: "string" }], stateMutability: "view" }],
   },
   {
+    name: "imageUrl",
+    abi: [{ name: "imageUrl", type: "function", inputs: [], outputs: [{ type: "string" }], stateMutability: "view" }],
+  },
+  {
     name: "allData",
     abi: [{ name: "allData", type: "function", inputs: [], outputs: [{ type: "bytes" }], stateMutability: "view" }],
   },
@@ -164,7 +168,8 @@ export async function probeContract(address: Address, chainId: number): Promise<
       } catch {
         // non-fatal
       }
-      if (raw.startsWith("ipfs://") || raw.match(/\.(png|jpg|jpeg|gif|svg|webp)/i)) {
+      const isImageFn = r.fn.toLowerCase().startsWith("image");
+      if (isImageFn || raw.startsWith("ipfs://") || raw.match(/\.(png|jpg|jpeg|gif|svg|webp)/i)) {
         resolvedImageUrls.push(resolveIpfsUri(raw));
       }
     } else {
