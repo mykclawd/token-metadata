@@ -93,6 +93,27 @@ export function extractSocialLinks(obj: unknown): Record<string, string> {
     reddit: ["reddit"],
   };
 
+  // Maps platform name values (from {platform, url} array items) to social slots
+  const platformAliases: Record<string, string> = {
+    website: "website",
+    site: "website",
+    web: "website",
+    homepage: "website",
+    twitter: "twitter",
+    x: "twitter",
+    telegram: "telegram",
+    tg: "telegram",
+    discord: "discord",
+    farcaster: "farcaster",
+    warpcast: "farcaster",
+    github: "github",
+    medium: "medium",
+    reddit: "reddit",
+    instagram: "instagram",
+    linkedin: "linkedin",
+    youtube: "youtube",
+  };
+
   const found: Record<string, string> = {};
 
   function matchKey(k: string): string | null {
@@ -105,20 +126,45 @@ export function extractSocialLinks(obj: unknown): Record<string, string> {
     return null;
   }
 
+  // Detects {platform: "x", url: "..."} or {type: "telegram", link: "..."} shapes
+  function tryPlatformUrlShape(item: Record<string, unknown>): boolean {
+    const platformKey = ["platform", "type", "name", "network"].find((k) => typeof item[k] === "string");
+    const urlKey = ["url", "link", "href", "value"].find((k) => typeof item[k] === "string");
+    if (!platformKey || !urlKey) return false;
+
+    const platform = (item[platformKey] as string).toLowerCase().trim();
+    const url = item[urlKey] as string;
+    if (!url) return false;
+
+    const slot = platformAliases[platform];
+    if (slot) {
+      if (isTweetUrl(url)) {
+        found.twitter = found.twitter ?? url;
+      } else {
+        found[slot] = found[slot] ?? url;
+      }
+      return true;
+    }
+    return false;
+  }
+
   function walk(val: unknown, depth = 0) {
     if (depth > 5) return;
     if (val && typeof val === "object" && !Array.isArray(val)) {
-      for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
-        if (typeof v === "string" && v.length > 0) {
-          // Explicitly route tweet URLs to twitter regardless of key name
-          if (isTweetUrl(v)) {
-            found.twitter = found.twitter ?? v;
-          } else {
-            const social = matchKey(k);
-            if (social) found[social] = found[social] ?? v;
+      const item = val as Record<string, unknown>;
+      // Try {platform, url} shape before falling through to key-name matching
+      if (!tryPlatformUrlShape(item)) {
+        for (const [k, v] of Object.entries(item)) {
+          if (typeof v === "string" && v.length > 0) {
+            if (isTweetUrl(v)) {
+              found.twitter = found.twitter ?? v;
+            } else {
+              const social = matchKey(k);
+              if (social) found[social] = found[social] ?? v;
+            }
           }
+          walk(v, depth + 1);
         }
-        walk(v, depth + 1);
       }
     } else if (Array.isArray(val)) {
       val.forEach((item) => walk(item, depth + 1));
