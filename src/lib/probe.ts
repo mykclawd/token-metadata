@@ -12,10 +12,16 @@ export interface ProbeResult {
   error?: string;
 }
 
-const PROBE_FUNCTIONS: { name: string; abi: Abi }[] = [
+const PROBE_FUNCTIONS: { name: string; abi: Abi; argVariants?: unknown[][] }[] = [
   {
     name: "tokenURI",
-    abi: [{ name: "tokenURI", type: "function", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "string" }], stateMutability: "view" }],
+    // Try no-args first (tokenURI()), then tokenURI(uint256) with id=0.
+    // ERC-20 tokens often expose tokenURI() with no args; ERC-721-style tokenURI(uint256) is tried as fallback.
+    abi: [{ name: "tokenURI", type: "function", inputs: [], outputs: [{ type: "string" }], stateMutability: "view" }],
+    argVariants: [
+      [],
+      [0n],
+    ],
   },
   {
     name: "contractURI",
@@ -24,6 +30,7 @@ const PROBE_FUNCTIONS: { name: string; abi: Abi }[] = [
   {
     name: "uri",
     abi: [{ name: "uri", type: "function", inputs: [{ name: "id", type: "uint256" }], outputs: [{ type: "string" }], stateMutability: "view" }],
+    argVariants: [[0n]],
   },
   {
     name: "metadata",
@@ -47,30 +54,21 @@ const PROBE_FUNCTIONS: { name: string; abi: Abi }[] = [
   },
 ];
 
-async function callWithFallback(
+async function tryCall(
+  client: ReturnType<typeof makePublicClient>,
   address: Address,
   fn: { name: string; abi: Abi },
-  chainId: number
-): Promise<ProbeResult> {
-  const client = makePublicClient(chainId);
+  args: unknown[]
+): Promise<{ raw: string } | { error: string; isRevert: boolean }> {
   try {
-    const args: unknown[] = ["tokenURI", "uri"].includes(fn.name) ? [0n] : [];
-
     const raw = await client.readContract({
       address,
       abi: fn.abi,
       functionName: fn.name,
       args,
     });
-
     const rawStr = typeof raw === "string" ? raw : typeof raw === "object" && raw !== null ? JSON.stringify(raw) : String(raw);
-
-    return {
-      fn: fn.name,
-      status: "success",
-      raw: rawStr,
-      parsed: safeJsonParse(rawStr),
-    };
+    return { raw: rawStr };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     const isRevert =
@@ -78,20 +76,47 @@ async function callWithFallback(
       msg.includes("execution reverted") ||
       msg.includes("invalid opcode") ||
       msg.includes("out of gas");
-    const isUnavailable =
-      msg.includes("Function") ||
-      msg.includes("not a function") ||
-      msg.includes("does not exist") ||
-      msg.includes("selector") ||
-      msg.toLowerCase().includes("abi") ||
-      msg.toLowerCase().includes("0x");
-
-    return {
-      fn: fn.name,
-      status: isRevert ? "reverted" : isUnavailable ? "unavailable" : "error",
-      error: msg.slice(0, 200),
-    };
+    return { error: msg.slice(0, 200), isRevert };
   }
+}
+
+async function callWithFallback(
+  address: Address,
+  fn: { name: string; abi: Abi; argVariants?: unknown[][] },
+  chainId: number
+): Promise<ProbeResult> {
+  const client = makePublicClient(chainId);
+  const variants = fn.argVariants ?? [[]];
+  let lastError = "";
+  let lastIsRevert = false;
+
+  for (const args of variants) {
+    const result = await tryCall(client, address, fn, args);
+    if ("raw" in result) {
+      return {
+        fn: fn.name,
+        status: "success",
+        raw: result.raw,
+        parsed: safeJsonParse(result.raw),
+      };
+    }
+    lastError = result.error;
+    lastIsRevert = result.isRevert;
+  }
+
+  const isUnavailable =
+    lastError.includes("Function") ||
+    lastError.includes("not a function") ||
+    lastError.includes("does not exist") ||
+    lastError.includes("selector") ||
+    lastError.toLowerCase().includes("abi") ||
+    lastError.toLowerCase().includes("0x");
+
+  return {
+    fn: fn.name,
+    status: lastIsRevert ? "reverted" : isUnavailable ? "unavailable" : "error",
+    error: lastError,
+  };
 }
 
 export interface DiscoveredMetadata {
