@@ -5,8 +5,8 @@ export default function Home() {
   return (
     <main className="relative z-10 min-h-screen px-4 py-14 sm:py-20 flex flex-col">
       <div className="max-w-2xl mx-auto w-full flex-1">
-        <header className="mb-12 animate-fade-up" style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
-          <div style={{ flex: "0 0 auto" }}>
+        <header className="mb-12 animate-fade-up flex flex-col-reverse sm:flex-row items-center gap-8">
+          <div className="w-full sm:flex-none">
             <p className="section-label mb-3">ERC-20 · Multi-chain</p>
             <h1
               style={{
@@ -21,11 +21,11 @@ export default function Home() {
               Token<br />
               <span style={{ color: "var(--accent)" }}>Inspector</span>
             </h1>
-            <p style={{ color: "var(--text-2)", fontSize: "0.875rem", marginTop: "0.75rem", fontFamily: "var(--font-mono)" }}>
+            <p style={{ color: "var(--text-2)", fontSize: "0.875rem", marginTop: "0.75rem", fontFamily: "var(--font-mono)", maxWidth: "32ch" }}>
               Metadata for any ERC-20 contract. Get links from the contract source, not a third-party.
             </p>
           </div>
-          <div style={{ flex: "1 1 auto", display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <div className="flex-1 flex justify-center items-center">
             <Image
               src="/logo.png"
               alt="Token Inspector"
