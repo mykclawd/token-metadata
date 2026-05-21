@@ -30,7 +30,17 @@ export default function Home() {
         className="max-w-2xl mx-auto w-full mt-16 pt-6"
         style={{ borderTop: "1px solid var(--border)" }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <a
+          href="https://github.com/mykclawd/token-metadata"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+            textDecoration: "none", transition: "opacity 0.15s",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.opacity = "0.7")}
+          onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+        >
           <span style={{ color: "var(--text-3)", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}>
             built by
           </span>
@@ -44,7 +54,7 @@ export default function Home() {
           <span style={{ color: "var(--text-2)", fontSize: "0.75rem", fontFamily: "var(--font-mono)", fontWeight: 500 }}>
             mykclawd
           </span>
-        </div>
+        </a>
       </footer>
     </main>
   );
