@@ -6,6 +6,7 @@ import { JsonViewer } from "./JsonViewer";
 import { ProbeResults } from "./ProbeResults";
 import { SocialLinks } from "./SocialLinks";
 import { ImageGallery } from "./ImageGallery";
+import { GeckoChart } from "./GeckoChart";
 
 const CHAINS = [
   { id: 8453,    label: "Base" },
@@ -257,8 +258,11 @@ export function TokenInspector() {
             </div>
           </div>
 
+          {/* Price chart */}
+          <GeckoChart address={result.address} chainId={result.chainId} index={2} />
+
           {/* 1. Standard ERC-20 */}
-          <Section title="01 · ERC-20 Standard" index={2}>
+          <Section title="01 · ERC-20 Standard" index={3}>
             <div>
               <DataRow label="Name"         value={result.erc20.name} />
               <DataRow label="Symbol"       value={result.erc20.symbol} />
@@ -268,7 +272,7 @@ export function TokenInspector() {
           </Section>
 
           {/* 2. Discovered */}
-          <Section title="02 · Discovered Metadata" index={3}>
+          <Section title="02 · Discovered Metadata" index={4}>
             {result.discovered.metadata || Object.keys(result.discovered.socialLinks).length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                 {Object.keys(result.discovered.socialLinks).length > 0 && (
@@ -299,7 +303,7 @@ export function TokenInspector() {
           </Section>
 
           {/* 3. Raw */}
-          <Section title="03 · Raw Responses" index={4}>
+          <Section title="03 · Raw Responses" index={5}>
             {Object.keys(result.rawResponses).length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {Object.entries(result.rawResponses).map(([fn, raw]) => (
@@ -326,7 +330,7 @@ export function TokenInspector() {
           </Section>
 
           {/* 4. Probe results */}
-          <Section title="04 · Probe Results" index={5}>
+          <Section title="04 · Probe Results" index={6}>
             <ProbeResults results={result.probeResults} />
           </Section>
         </>
