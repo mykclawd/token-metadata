@@ -28,7 +28,7 @@ export function GeckoChart({ address, chainId, index = 0 }: GeckoChartProps) {
 
   const src =
     `https://www.geckoterminal.com/${network}/tokens/${address}` +
-    `?embed=1&info=1&swaps=0&light_chart=0&bg_color=070a0f&chart_type=market_cap&resolution=60`;
+    `?embed=1&info=0&swaps=0&light_chart=0&bg_color=070a0f&chart_type=market_cap&resolution=1h`;
 
   return (
     <div

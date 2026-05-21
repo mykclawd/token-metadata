@@ -1,9 +1,10 @@
+import Image from "next/image";
 import { TokenInspector } from "@/components/TokenInspector";
 
 export default function Home() {
   return (
-    <main className="relative z-10 min-h-screen px-4 py-14 sm:py-20">
-      <div className="max-w-2xl mx-auto">
+    <main className="relative z-10 min-h-screen px-4 py-14 sm:py-20 flex flex-col">
+      <div className="max-w-2xl mx-auto w-full flex-1">
         <header className="mb-12 animate-fade-up">
           <p className="section-label mb-3">ERC-20 · Multi-chain</p>
           <h1
@@ -25,6 +26,26 @@ export default function Home() {
         </header>
         <TokenInspector />
       </div>
+      <footer
+        className="max-w-2xl mx-auto w-full mt-16 pt-6"
+        style={{ borderTop: "1px solid var(--border)" }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ color: "var(--text-3)", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}>
+            built by
+          </span>
+          <Image
+            src="/mykclawd.png"
+            alt="mykclawd"
+            width={28}
+            height={28}
+            style={{ borderRadius: "50%", opacity: 0.9 }}
+          />
+          <span style={{ color: "var(--text-2)", fontSize: "0.75rem", fontFamily: "var(--font-mono)", fontWeight: 500 }}>
+            mykclawd
+          </span>
+        </div>
+      </footer>
     </main>
   );
 }
