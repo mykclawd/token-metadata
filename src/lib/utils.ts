@@ -66,29 +66,56 @@ export function extractImageUrls(obj: unknown): string[] {
   return [...new Set(urls)];
 }
 
+function isTweetUrl(url: string): boolean {
+  return /^https?:\/\/(www\.)?(twitter\.com|x\.com)\/(i\/status|[^/]+\/status)\//.test(url);
+}
+
+function extractUrlsFromText(text: string): string[] {
+  const matches = text.match(/https?:\/\/[^\s"'<>(),]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s"'<>(),]*)?/g) ?? [];
+  return matches
+    .map((m) => (m.startsWith("http") ? m : `https://${m}`))
+    .filter((m) => {
+      try { new URL(m); return true; } catch { return false; }
+    });
+}
+
 export function extractSocialLinks(obj: unknown): Record<string, string> {
+  // Key aliases use whole-key matching (exact or starts-with) to avoid
+  // "tweet_url" accidentally matching the "url" website alias.
   const socialKeys: Record<string, string[]> = {
-    website: ["website", "url", "homepage", "web"],
-    twitter: ["twitter", "x", "twitterUrl", "twitter_url", "x_url"],
-    telegram: ["telegram", "tg", "telegramUrl", "telegram_url"],
-    discord: ["discord", "discordUrl", "discord_url"],
+    website: ["website", "homepage", "web", "site"],
+    twitter: ["twitter", "tweet", "x_url", "x_link"],
+    telegram: ["telegram", "tg"],
+    discord: ["discord"],
     farcaster: ["farcaster", "warpcast"],
-    github: ["github", "githubUrl", "github_url"],
-    medium: ["medium", "mediumUrl"],
+    github: ["github"],
+    medium: ["medium"],
     reddit: ["reddit"],
   };
 
   const found: Record<string, string> = {};
 
+  function matchKey(k: string): string | null {
+    const lower = k.toLowerCase().replace(/[-_]/g, "");
+    for (const [social, aliases] of Object.entries(socialKeys)) {
+      if (aliases.some((a) => lower === a || lower.startsWith(a))) {
+        return social;
+      }
+    }
+    return null;
+  }
+
   function walk(val: unknown, depth = 0) {
     if (depth > 5) return;
     if (val && typeof val === "object" && !Array.isArray(val)) {
       for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
-        for (const [social, aliases] of Object.entries(socialKeys)) {
-          if (aliases.some((a) => k.toLowerCase().includes(a.toLowerCase()))) {
-            if (typeof v === "string" && v.length > 0) {
-              found[social] = v;
-            }
+        if (typeof v === "string" && v.length > 0) {
+          // Explicitly route tweet URLs to twitter regardless of key name
+          if (isTweetUrl(v)) {
+            found.twitter = found.twitter ?? v;
+          } else {
+            const social = matchKey(k);
+            if (social) found[social] = found[social] ?? v;
           }
         }
         walk(v, depth + 1);
@@ -98,6 +125,18 @@ export function extractSocialLinks(obj: unknown): Record<string, string> {
     }
   }
   walk(obj);
+
+  // If no website found, look for a URL in the description field
+  if (!found.website) {
+    const description = (obj as Record<string, unknown>)?.description;
+    if (typeof description === "string") {
+      const candidates = extractUrlsFromText(description).filter(
+        (u) => !isTweetUrl(u) && !/twitter\.com|x\.com|t\.me|discord\.gg|github\.com/i.test(u)
+      );
+      if (candidates.length > 0) found.website = candidates[0];
+    }
+  }
+
   return found;
 }
 
