@@ -143,7 +143,7 @@ export function TokenInspector() {
 
       {/* ── Search row ── */}
       <div
-        className="scanner card"
+        className={`${!loading && !result && !error ? "scanner" : ""} card`}
         style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}
       >
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>

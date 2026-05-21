@@ -20,7 +20,7 @@ export default function Home() {
             <span style={{ color: "var(--accent)" }}>Inspector</span>
           </h1>
           <p style={{ color: "var(--text-2)", fontSize: "0.875rem", marginTop: "0.75rem", fontFamily: "var(--font-mono)" }}>
-            Decode every onchain + offchain signal from any ERC-20 contract.
+            Metadata for any ERC-20 contract. Get links from the contract source, not a third-party.
           </p>
         </header>
         <TokenInspector />

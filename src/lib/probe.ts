@@ -151,25 +151,25 @@ export async function probeContract(address: Address, chainId: number): Promise<
     const raw = r.raw;
 
     if (raw.startsWith("ipfs://") || raw.startsWith("http://") || raw.startsWith("https://")) {
+      const isImageFetch = r.fn.toLowerCase().startsWith("image");
       try {
         const fetched = await fetchJsonOrText(raw);
         if (fetched.data && typeof fetched.data === "object") {
           resolvedMetadata = resolvedMetadata ?? {};
           Object.assign(resolvedMetadata, fetched.data as Record<string, unknown>);
-          rawResponses[`${r.fn}:fetched`] = fetched.raw;
+          if (!isImageFetch) rawResponses[`${r.fn}:fetched`] = fetched.raw;
         } else if (typeof fetched.data === "string") {
           const parsed = safeJsonParse(fetched.data);
           if (parsed && typeof parsed === "object") {
             resolvedMetadata = resolvedMetadata ?? {};
             Object.assign(resolvedMetadata, parsed as Record<string, unknown>);
           }
-          rawResponses[`${r.fn}:fetched`] = fetched.raw;
+          if (!isImageFetch) rawResponses[`${r.fn}:fetched`] = fetched.raw;
         }
       } catch {
         // non-fatal
       }
-      const isImageFn = r.fn.toLowerCase().startsWith("image");
-      if (isImageFn || raw.startsWith("ipfs://") || raw.match(/\.(png|jpg|jpeg|gif|svg|webp)/i)) {
+      if (isImageFetch || raw.startsWith("ipfs://") || raw.match(/\.(png|jpg|jpeg|gif|svg|webp)/i)) {
         resolvedImageUrls.push(resolveIpfsUri(raw));
       }
     } else {

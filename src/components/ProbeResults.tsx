@@ -13,7 +13,7 @@ interface ProbeResultsProps {
 
 const STATUS = {
   success:     { label: "OK",  color: "var(--accent)",  bg: "rgba(0,220,180,0.07)",  dot: "var(--accent)" },
-  reverted:    { label: "REV", color: "var(--warn)",     bg: "rgba(245,166,35,0.06)", dot: "var(--warn)" },
+  reverted:    { label: "REVERTED", color: "var(--warn)",     bg: "rgba(245,166,35,0.06)", dot: "var(--warn)" },
   unavailable: { label: "N/A", color: "var(--text-3)",   bg: "transparent",           dot: "var(--text-3)" },
   error:       { label: "ERR", color: "var(--danger)",   bg: "rgba(255,77,106,0.06)", dot: "var(--danger)" },
 };
